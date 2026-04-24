@@ -1,0 +1,46 @@
+---
+# patch.yml — Full Patch Management Pipeline
+#
+# Pipeline flow:
+#   pre_check → snapshot → patch → reboot (conditional) → post_check → report
+#
+# Usage:
+#   Full pipeline:
+#     ansible-playbook -i inventory/hosts.ini playbooks/patch.yml
+#
+#   Dry run (check what would change):
+#     ansible-playbook -i inventory/hosts.ini playbooks/patch.yml --check
+#
+#   Pre-check only (no changes):
+#     ansible-playbook -i inventory/hosts.ini playbooks/patch.yml --tags pre_check
+#
+#   Patch without reboot:
+#     ansible-playbook -i inventory/hosts.ini playbooks/patch.yml -e "reboot_if_required=false"
+#
+#   Security patches only:
+#     ansible-playbook -i inventory/hosts.ini playbooks/patch.yml -e "patch_upgrade_type=security"
+#
+#   Target a specific host:
+#     ansible-playbook -i inventory/hosts.ini playbooks/patch.yml --limit managed-node-01
+#
+# AAP/Tower Job Template mapping:
+#   - Job Template: "Patching Pipeline — {{ environment }}"
+#   - Inventory: Dynamic AWS EC2
+#   - Credential: SSH Machine Credential
+#   - Survey: patch_upgrade_type, reboot_if_required, pinned_packages
+#   - Schedule: Weekly, Sunday 02:00 UTC
+
+- name: Patch Management Pipeline
+  hosts: managed_nodes
+  become: true
+  gather_facts: true
+  serial: 1   # Rolling patch: one host at a time to preserve capacity
+
+  pre_tasks:
+    - name: Load environment-specific variables if present
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../group_vars/{{ ansible_environment | default('sandbox') }}.yml"
+      ignore_errors: true
+
+  roles:
+    - role: patch_manager

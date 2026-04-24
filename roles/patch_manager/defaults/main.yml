@@ -1,0 +1,33 @@
+---
+# ── Pre-check thresholds ──────────────────────────────────────────
+min_disk_free_percent: 20
+min_memory_free_mb: 256
+
+# ── Critical services — failure gates the pipeline ────────────────
+critical_services:
+  - ssh
+  - rsyslog
+
+# ── Patch scope ───────────────────────────────────────────────────
+# safe     = apt-get upgrade       (no package removal, low risk)
+# full     = apt-get dist-upgrade  (may remove packages, higher coverage)
+# security = unattended-upgrades   (security patches only)
+patch_upgrade_type: safe
+
+# ── Package exclusions ────────────────────────────────────────────
+# Packages in this list will be held before patching and released after.
+# Use wildcards to pin kernel packages: "linux-image-*"
+pinned_packages: []
+
+# ── Reboot settings ───────────────────────────────────────────────
+reboot_if_required: true          # Only reboots if /var/run/reboot-required exists
+reboot_timeout: 300               # Seconds to wait for host to come back online
+reboot_pre_delay: 5               # Seconds to wait before initiating reboot
+reboot_msg: "Rebooting as part of scheduled patching pipeline"
+
+# ── Snapshot / package list ───────────────────────────────────────
+capture_package_list: true        # Capture installed packages before and after patching
+
+# ── Report settings ───────────────────────────────────────────────
+report_output_dir: /tmp/patch_reports
+report_timestamp: "{{ ansible_date_time.iso8601_basic_short }}"

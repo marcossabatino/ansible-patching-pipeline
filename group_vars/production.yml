@@ -1,0 +1,15 @@
+---
+# Production: conservative patching with strict pre-checks
+patch_upgrade_type: security     # Security patches only
+reboot_if_required: true
+reboot_timeout: 600              # Allow more time for production hosts
+min_disk_free_percent: 30        # Higher threshold — production is stricter
+min_memory_free_mb: 512
+critical_services:
+  - ssh
+  - rsyslog
+  - auditd
+  - nginx                        # Example: protect your app services
+pinned_packages:
+  - "linux-image-*"              # Never auto-upgrade the kernel in production
+  - "linux-headers-*"

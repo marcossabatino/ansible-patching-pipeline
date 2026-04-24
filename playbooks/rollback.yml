@@ -1,0 +1,55 @@
+---
+# rollback.yml — Emergency package rollback
+#
+# This playbook pins the packages that were upgraded in the last patch run
+# and attempts to downgrade to the previously installed version.
+#
+# IMPORTANT: This requires knowing the previous version. Run `snapshot` first
+# or provide previous_version_file variable pointing to a saved package list.
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini playbooks/rollback.yml \
+#     -e '{"rollback_packages": ["nginx=1.18.0-0ubuntu1"]}'
+#
+# This playbook is intentionally conservative:
+#   - It does NOT autoremove packages
+#   - It does NOT reboot automatically
+#   - It outputs what was rolled back and what needs manual review
+
+- name: Emergency rollback of specific packages
+  hosts: managed_nodes
+  become: true
+  gather_facts: true
+
+  vars:
+    rollback_packages: []
+
+  pre_tasks:
+    - name: Assert rollback_packages was provided
+      ansible.builtin.assert:
+        that:
+          - rollback_packages | length > 0
+        fail_msg: >
+          No rollback_packages provided. Supply via extra-vars, for example:
+          -e '{"rollback_packages": ["nginx=1.18.0-0ubuntu1"]}'
+        success_msg: "Rolling back {{ rollback_packages | length }} package(s)"
+
+  tasks:
+    - name: Force-downgrade pinned rollback packages
+      ansible.builtin.apt:
+        name: "{{ rollback_packages }}"
+        state: present
+        force: true
+        dpkg_options: 'force-downgrade'
+      register: rollback_result
+
+    - name: Print rollback summary
+      ansible.builtin.debug:
+        msg:
+          - "══════════════════════════════════════════════════"
+          - " ROLLBACK COMPLETE — {{ ansible_hostname }}"
+          - "══════════════════════════════════════════════════"
+          - " Packages rolled back : {{ rollback_packages | join(', ') }}"
+          - " Changed              : {{ rollback_result.changed }}"
+          - " Manual review needed : verify services, consider reboot if kernel was rolled back"
+          - "══════════════════════════════════════════════════"

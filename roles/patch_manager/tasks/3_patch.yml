@@ -1,0 +1,49 @@
+---
+- name: PATCH | Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 0
+
+- name: PATCH | Hold pinned packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: "{{ pinned_packages }}"
+  when: pinned_packages | length > 0
+  ignore_errors: true
+
+- name: PATCH | Apply safe upgrade
+  ansible.builtin.apt:
+    upgrade: safe
+    autoclean: true
+    autoremove: false
+  when: patch_upgrade_type == 'safe'
+  register: result_safe_upgrade
+
+- name: PATCH | Apply full upgrade (dist-upgrade)
+  ansible.builtin.apt:
+    upgrade: dist
+    autoclean: true
+    autoremove: true
+  when: patch_upgrade_type == 'full'
+  register: result_full_upgrade
+
+- name: PATCH | Apply security patches only
+  ansible.builtin.apt:
+    upgrade: safe
+    default_release: "{{ ansible_distribution_release }}-security"
+  when: patch_upgrade_type == 'security'
+  register: result_security_upgrade
+
+- name: PATCH | Unhold pinned packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: install
+  loop: "{{ pinned_packages }}"
+  when: pinned_packages | length > 0
+  ignore_errors: true
+
+- name: PATCH | Remove unused packages
+  ansible.builtin.apt:
+    autoremove: true
+    purge: false

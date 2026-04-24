@@ -1,0 +1,45 @@
+---
+- name: REPORT | Ensure report output directory exists
+  ansible.builtin.file:
+    path: "{{ report_output_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: REPORT | Generate plain text report
+  ansible.builtin.template:
+    src: report.txt.j2
+    dest: "{{ report_output_dir }}/patch_report_{{ ansible_hostname }}_{{ report_timestamp }}.txt"
+    mode: '0644'
+
+- name: REPORT | Generate HTML report
+  ansible.builtin.template:
+    src: report.html.j2
+    dest: "{{ report_output_dir }}/patch_report_{{ ansible_hostname }}_{{ report_timestamp }}.html"
+    mode: '0644'
+
+- name: REPORT | Fetch TXT report to control node
+  ansible.builtin.fetch:
+    src: "{{ report_output_dir }}/patch_report_{{ ansible_hostname }}_{{ report_timestamp }}.txt"
+    dest: "reports/patch_report_{{ ansible_hostname }}_{{ report_timestamp }}.txt"
+    flat: true
+
+- name: REPORT | Fetch HTML report to control node
+  ansible.builtin.fetch:
+    src: "{{ report_output_dir }}/patch_report_{{ ansible_hostname }}_{{ report_timestamp }}.html"
+    dest: "reports/patch_report_{{ ansible_hostname }}_{{ report_timestamp }}.html"
+    flat: true
+
+- name: REPORT | Print pipeline summary
+  ansible.builtin.debug:
+    msg:
+      - "══════════════════════════════════════════════════"
+      - " PATCH PIPELINE REPORT — {{ ansible_hostname }}"
+      - "══════════════════════════════════════════════════"
+      - " Pre-check    : PASSED"
+      - " Patch type   : {{ patch_upgrade_type }}"
+      - " Upgraded     : {{ post_check_results.packages_upgraded }} packages"
+      - " Remaining    : {{ post_check_results.remaining_upgrades }} upgrades pending"
+      - " Reboot       : {{ 'YES' if post_check_results.reboot_performed else 'NO (not required)' }}"
+      - " Services     : ALL CRITICAL SERVICES RUNNING"
+      - " Reports      : reports/patch_report_{{ ansible_hostname }}_{{ report_timestamp }}.*"
+      - "══════════════════════════════════════════════════"

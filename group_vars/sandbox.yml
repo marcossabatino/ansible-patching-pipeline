@@ -1,0 +1,8 @@
+---
+# Sandbox: maximum patch coverage, no restraints
+patch_upgrade_type: full
+reboot_if_required: true
+min_disk_free_percent: 10        # Lower threshold — sandbox, not production
+pinned_packages: []              # No pins in sandbox
+critical_services:
+  - ssh

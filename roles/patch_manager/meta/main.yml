@@ -1,0 +1,20 @@
+---
+galaxy_info:
+  role_name: patch_manager
+  author: sabatino
+  description: Production-grade patch management pipeline for Ubuntu with pre/post checks and HTML+TXT reporting
+  company: platform-engineering
+  license: MIT
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Ubuntu
+      versions: [jammy, focal]
+  galaxy_tags:
+    - patching
+    - patch_management
+    - ubuntu
+    - compliance
+    - operations
+    - maintenance
+
+dependencies: []

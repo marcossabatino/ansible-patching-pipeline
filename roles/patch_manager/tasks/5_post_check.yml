@@ -1,0 +1,41 @@
+---
+- name: POST-CHECK | Re-gather running services
+  ansible.builtin.service_facts:
+
+- name: POST-CHECK | Verify critical services are still running
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.services[item + '.service'] is defined
+      - ansible_facts.services[item + '.service'].state == 'running'
+    fail_msg: "POST-PATCH ALERT: Service '{{ item }}' is DOWN after patching!"
+    success_msg: "Service '{{ item }}' still running after patch"
+  loop: "{{ critical_services }}"
+
+- name: POST-CHECK | Capture installed packages (after)
+  ansible.builtin.shell: dpkg-query -W -f='${Package} ${Version}\n' | sort
+  changed_when: false
+  register: packages_after
+
+- name: POST-CHECK | Compute upgraded packages diff
+  ansible.builtin.set_fact:
+    packages_after_list: "{{ packages_after.stdout_lines }}"
+    packages_upgraded_count: >-
+      {{ packages_after.stdout_lines | difference(packages_before_list) | length }}
+
+- name: POST-CHECK | Check for remaining upgrades
+  ansible.builtin.shell: |
+    set -o pipefail
+    apt-get -s upgrade 2>/dev/null | grep "^Inst" | wc -l
+  args:
+    executable: /bin/bash
+  changed_when: false
+  register: remaining_upgrades
+
+- name: POST-CHECK | Set post-check result facts
+  ansible.builtin.set_fact:
+    post_check_results:
+      critical_services_ok: true
+      packages_upgraded: "{{ packages_upgraded_count }}"
+      remaining_upgrades: "{{ remaining_upgrades.stdout | trim }}"
+      reboot_performed: "{{ reboot_required | default(false) and reboot_if_required }}"
+      timestamp: "{{ ansible_date_time.iso8601 }}"

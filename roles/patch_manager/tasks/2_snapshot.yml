@@ -1,0 +1,24 @@
+---
+- name: SNAPSHOT | Capture installed packages (before)
+  ansible.builtin.shell: dpkg-query -W -f='${Package} ${Version}\n' | sort
+  changed_when: false
+  register: packages_before
+  when: capture_package_list
+
+- name: SNAPSHOT | Capture available upgrades
+  ansible.builtin.shell: |
+    set -o pipefail
+    apt-get -s upgrade 2>/dev/null | grep "^Inst" | awk '{print $2, $3}' | sort
+  args:
+    executable: /bin/bash
+  changed_when: false
+  register: packages_to_upgrade
+
+- name: SNAPSHOT | Set facts for available upgrade count
+  ansible.builtin.set_fact:
+    upgrade_count: "{{ packages_to_upgrade.stdout_lines | length }}"
+    packages_before_list: "{{ packages_before.stdout_lines | default([]) }}"
+
+- name: SNAPSHOT | Print upgrade summary
+  ansible.builtin.debug:
+    msg: "{{ upgrade_count }} packages available for upgrade on {{ ansible_hostname }}"

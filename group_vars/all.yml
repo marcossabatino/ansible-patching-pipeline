@@ -1,0 +1,29 @@
+---
+# ── Pre-check thresholds ──────────────────────────────────────────
+# Pipeline will ABORT if any of these conditions are not met.
+min_disk_free_percent: 20       # Minimum free disk space on / required to proceed
+min_memory_free_mb: 256         # Minimum free RAM in MB required to proceed
+
+# ── Critical services — patching will abort if any are not running ─
+critical_services:
+  - ssh
+  - rsyslog
+
+# ── Patch scope ───────────────────────────────────────────────────
+patch_upgrade_type: safe        # Options: safe | full | security
+                                # safe = apt-get upgrade (no package removal)
+                                # full = apt-get dist-upgrade (allows removal)
+                                # security = security patches only via unattended-upgrades
+
+# ── Reboot policy ─────────────────────────────────────────────────
+reboot_if_required: true        # Reboot only if /var/run/reboot-required exists
+reboot_timeout: 300             # Max seconds to wait for host to come back
+reboot_pre_delay: 5             # Seconds to wait before initiating reboot
+
+# ── Package pins — these packages will never be upgraded ──────────
+pinned_packages: []             # Example: ["linux-image-*", "mysql-server"]
+
+# ── Report settings ───────────────────────────────────────────────
+report_output_dir: /tmp/patch_reports
+report_timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+send_report_to_slack: false     # Set true and configure slack_webhook_url to notify

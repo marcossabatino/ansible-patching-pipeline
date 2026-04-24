@@ -1,0 +1,45 @@
+---
+# Pipeline stages (use --tags to run selectively):
+#
+#  [pre_check] ──► [snapshot] ──► [patch] ──► [reboot] ──► [post_check] ──► [report]
+#
+#  ABORT conditions (pre_check):
+#    - Disk free < min_disk_free_percent
+#    - Memory free < min_memory_free_mb
+#    - Any critical_services service is not running
+#
+#  Reboot: conditional — only if /var/run/reboot-required exists AND reboot_if_required=true
+
+- name: Pre-check stage
+  ansible.builtin.import_tasks: 1_pre_check.yml
+  tags:
+    - pre_check
+    - check
+
+- name: Snapshot stage
+  ansible.builtin.import_tasks: 2_snapshot.yml
+  tags:
+    - snapshot
+
+- name: Patch stage
+  ansible.builtin.import_tasks: 3_patch.yml
+  tags:
+    - patch
+    - upgrade
+
+- name: Reboot stage
+  ansible.builtin.import_tasks: 4_reboot.yml
+  tags:
+    - reboot
+
+- name: Post-check stage
+  ansible.builtin.import_tasks: 5_post_check.yml
+  tags:
+    - post_check
+    - check
+
+- name: Report stage
+  ansible.builtin.import_tasks: 6_report.yml
+  tags:
+    - report
+    - always

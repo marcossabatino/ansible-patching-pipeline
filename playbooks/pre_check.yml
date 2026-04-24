@@ -1,0 +1,16 @@
+---
+# pre_check.yml — Standalone pre-check (no changes applied)
+# Run before a maintenance window to validate all hosts are ready for patching.
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini playbooks/pre_check.yml
+
+- name: Patch pipeline pre-check (read-only)
+  hosts: managed_nodes
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Run patch_manager pre-check tasks
+      ansible.builtin.include_role:
+        name: patch_manager
+        tasks_from: 1_pre_check.yml

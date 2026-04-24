@@ -1,0 +1,51 @@
+---
+- name: PRE-CHECK | Gather system facts
+  ansible.builtin.setup:
+
+- name: PRE-CHECK | Check disk space on root filesystem
+  ansible.builtin.shell: df / --output=pcent | tail -1 | tr -d '% '
+  changed_when: false
+  register: disk_used_pct
+
+- name: PRE-CHECK | Assert disk space meets minimum
+  ansible.builtin.assert:
+    that:
+      - (100 - disk_used_pct.stdout | int) >= min_disk_free_percent
+    fail_msg: >
+      ABORT: Insufficient disk space. Free: {{ 100 - disk_used_pct.stdout | int }}%,
+      Required: {{ min_disk_free_percent }}%. Resolve before patching.
+    success_msg: "Disk space OK: {{ 100 - disk_used_pct.stdout | int }}% free"
+
+- name: PRE-CHECK | Check available memory
+  ansible.builtin.shell: free -m | awk '/^Mem:/ {print $7}'
+  changed_when: false
+  register: mem_free_mb
+
+- name: PRE-CHECK | Assert memory meets minimum
+  ansible.builtin.assert:
+    that:
+      - mem_free_mb.stdout | int >= min_memory_free_mb
+    fail_msg: >
+      ABORT: Insufficient memory. Free: {{ mem_free_mb.stdout }}MB,
+      Required: {{ min_memory_free_mb }}MB.
+    success_msg: "Memory OK: {{ mem_free_mb.stdout }}MB free"
+
+- name: PRE-CHECK | Gather running services
+  ansible.builtin.service_facts:
+
+- name: PRE-CHECK | Verify critical services are running
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.services[item + '.service'] is defined
+      - ansible_facts.services[item + '.service'].state == 'running'
+    fail_msg: "ABORT: Critical service '{{ item }}' is not running. Resolve before patching."
+    success_msg: "Service '{{ item }}' is running"
+  loop: "{{ critical_services }}"
+
+- name: PRE-CHECK | Record pre-check results
+  ansible.builtin.set_fact:
+    pre_check_results:
+      disk_free_pct: "{{ 100 - disk_used_pct.stdout | int }}"
+      mem_free_mb: "{{ mem_free_mb.stdout }}"
+      critical_services_ok: true
+      timestamp: "{{ ansible_date_time.iso8601 }}"
