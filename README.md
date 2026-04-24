@@ -102,7 +102,7 @@ The `terraform/` module is **adapted** from the companion project [`ansible-linu
 - New `environment` variable (default `sandbox`) — drives patch aggressiveness
 - Control node `user_data` also installs `boto3` + `botocore` for AWS dynamic inventory
 - Resource identifiers renamed from `cis_lab` → `patching`
-- SSH key paths default to `~/.ssh/patching-pipeline` (project-scoped)
+- SSH key paths default to `~/.ssh/ansible-patching-pipeline` (project-scoped)
 
 ---
 
@@ -131,7 +131,7 @@ cd ansible-patching-pipeline
 ### 2. Generate an SSH key (if you do not already have one)
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/patching-pipeline -N ""
+ssh-keygen -t ed25519 -f ~/.ssh/ansible-patching-pipeline -N ""
 ```
 
 ### 3. Provision the infrastructure with Terraform
