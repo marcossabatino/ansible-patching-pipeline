@@ -59,7 +59,7 @@ ansible-patching-pipeline/
 ├── .gitignore
 ├── README.md
 ├── ansible.cfg
-├── terraform/                     # EC2 lab (adapted from ansible-linux-hardening)
+├── terraform/                     # EC2 environment (adapted from ansible-linux-hardening)
 │   ├── main.tf
 │   ├── variables.tf
 │   ├── outputs.tf
@@ -98,10 +98,11 @@ ansible-patching-pipeline/
 
 The `terraform/` module is **adapted** from the companion project [`ansible-linux-hardening`](https://github.com/marcossabatino/ansible-linux-hardening) to keep infrastructure portable across portfolio projects. Differences:
 
-- `project_name` default → `patching-pipeline`
-- New `environment` variable (default `sandbox`) — drives patch aggressiveness.
-- Control node `user_data` also installs `boto3` + `botocore` for AWS dynamic inventory.
-- Resource identifiers renamed from `cis_lab` → `patching`.
+- `project_name` default → `patching-pipeline` (no "lab" designation)
+- New `environment` variable (default `sandbox`) — drives patch aggressiveness
+- Control node `user_data` also installs `boto3` + `botocore` for AWS dynamic inventory
+- Resource identifiers renamed from `cis_lab` → `patching`
+- SSH key paths default to `~/.ssh/patching-pipeline` (project-scoped)
 
 ---
 
@@ -109,7 +110,7 @@ The `terraform/` module is **adapted** from the companion project [`ansible-linu
 
 | Tool | Minimum version | Purpose |
 |---|---|---|
-| Terraform      | 1.3  | Provision the EC2 lab |
+| Terraform      | 1.3  | Provision the EC2 infrastructure |
 | AWS CLI        | 2.x  | Credentials + region config |
 | Ansible        | 2.12 | Execute the pipeline |
 | ansible-lint   | 6.x  | Lint playbooks before push |
@@ -130,10 +131,10 @@ cd ansible-patching-pipeline
 ### 2. Generate an SSH key (if you do not already have one)
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/id_rsa -N ""
+ssh-keygen -t ed25519 -f ~/.ssh/patching-pipeline -N ""
 ```
 
-### 3. Provision the lab with Terraform
+### 3. Provision the infrastructure with Terraform
 
 ```bash
 cd terraform
